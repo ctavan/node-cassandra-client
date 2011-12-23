@@ -83,6 +83,9 @@ function connect(options, callback) {
     callback(null, con);
   });
   var con = new Connection(connOptions);
+  con.on('log', function(level, message) {
+    console.log('log event: %s -- %s', level, message);
+  });
   con.connect(function(err) {
     if (err) {
       callback(err, null);
