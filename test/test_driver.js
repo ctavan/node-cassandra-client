@@ -25,6 +25,7 @@ var logmagic = require('logmagic');
 var async = require('async');
 
 var BigInteger = require('../lib/bigint').BigInteger;
+var UUID = require('../lib/driver').UUID;
 
 var Connection = require('../lib/driver').Connection;
 var PooledConnection = require('../lib/driver').PooledConnection;
