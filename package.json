@@ -19,18 +19,18 @@
     "lib": "lib"
   },
   "scripts": {
-    "test": "whiskey --tests \"test/test_driver.js test/test_decoder.js test/test_uuid.js\" --dependencies test/dependencies.json"
+    "test": "whiskey --tests \"test/test_driver.js test/test_decoder.js test/test_uuid.js\" --dependencies test/dependencies.json --scope-leaks"
   },
   "engines": {
     "node": ">= 0.4.0"
   },
   "dependencies": {
     "async": ">= 0.1.12",
-    "thrift" : ">= 0.6.0-1",
+    "thrift": ">= 0.6.0-1",
     "logmagic": ">= 0.1.1",
     "generic-pool": ">= 1.0.7",
     "whiskey": ">= 0.6.1",
-    "node-uuid": "> 1.3.1"
+    "node-uuid": ">= 1.3.2"
   },
   "devDependencies": {},
   "licenses" : [{
