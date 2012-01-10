@@ -43,10 +43,12 @@ exports['test_uuid_backwards_in_time'] = function(test, assert) {
   // Now this is like setting the system-clock back in time which must result
   // in the clock_seq field of the UUID being incremented to avoid collisions.
   var uuidTsSame = UUID.fromTime(ts).toString();
-  assert.ok(uuidTs !== uuidFuture); // duh
+
   // UUIDs generated from same TS after going back in time must differ
   // since clockseq must have been updated
   assert.ok(uuidTs !== uuidTsSame);
+  assert.ok(uuidTs !== uuidFuture); // duh
+
   // but time fields should definitely be the same.
   assert.strictEqual(uuidTs.split('-')[0], uuidTsSame.split('-')[0]);
   assert.strictEqual(uuidTs.split('-')[1], uuidTsSame.split('-')[1]);
@@ -90,6 +92,7 @@ exports['test_uuid_same_ms_min_max'] = function(test, assert) {
   assert.strictEqual(uuidTs.split('-')[2], uuidTsSame.split('-')[2]);
   test.finish();
 };
+
 exports['test_uuid_same_ms_min_nextmin'] = function(test, assert) {
   var ts = 1314735336320;
   var uuidTs = UUID.minUUID(ts).toString();
