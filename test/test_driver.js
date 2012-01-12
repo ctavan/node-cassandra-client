@@ -733,6 +733,44 @@ exports.testCustomValidators = function(test, assert) {
   });
 };
 
+exports.testBlob = function(test, assert) {
+  connect(function(err, con) {
+    if (err) {
+      assert.ok(false);
+      test.finish();
+    } else {
+      assert.ok(true);
+
+      var col = new Buffer('columnName');
+      var val = new Buffer('value');
+      var key = new Buffer('rowKey');
+      var updParms = [
+        col,
+        val,
+        key
+      ];
+      con.execute('UPDATE CfBytes SET ?=? WHERE KEY=?', updParms, function(updErr) {
+        if (updErr) {
+          con.close();
+          assert.ok(false);
+          test.finish();
+        } else {
+          con.execute('SELECT ? FROM CfBytes WHERE KEY=?', [col, key], function(selErr, rows) {
+            con.close();
+            assert.strictEqual(rows.rowCount(), 1);
+            var row = rows[0];
+            assert.strictEqual(1, row.colCount());
+            // Buffers cannot be compared in their native form, so we have to serialize them:
+            assert.strictEqual(col.toString('hex'), row.cols[0].name.toString('hex'));
+            assert.strictEqual(val.toString('hex'), row.cols[0].value.toString('hex'));
+            test.finish();
+          });
+        }
+      });
+    }
+  });
+};
+
 // this test only works an order-preserving partitioner.
 // it also uses an event-based approach to doing things.
 //exports.ZDISABLED_testMultipleRows = function(test, assert) {
