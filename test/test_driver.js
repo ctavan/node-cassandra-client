@@ -437,14 +437,13 @@ exports.testBinary = function(test, assert) {
     assert.ifError(err);
     var key = 'binarytest';
     var binaryParams = [util.randomBuffer(), util.randomBuffer(), util.randomBuffer()];
-    var stringParams = binaryParams.map(decoder.bufferToString);
-    con.execute('update CfBytes set ?=? where key=?', stringParams, function(updErr) {
+    con.execute('update CfBytes set ?=? where key=?', binaryParams, function(updErr) {
       if (updErr) {
         con.close();
         assert.ok(false);
         test.finish();
       } else {
-        con.execute('select ? from CfBytes where key=?', [stringParams[0], stringParams[2]], function(selErr, rows) {
+        con.execute('select ? from CfBytes where key=?', [binaryParams[0], binaryParams[2]], function(selErr, rows) {
           con.close();
           assert.strictEqual(rows.rowCount(), 1);
           var row = rows[0];
@@ -456,7 +455,7 @@ exports.testBinary = function(test, assert) {
         });
       }
     });
-  });  
+  });
 };
 
 exports.testLong = function(test, assert) {
@@ -755,44 +754,6 @@ exports.testCustomValidators = function(test, assert) {
               assert.ok(row.colHash.string_col.toString() === 'test_string_value');
               assert.ok(row.colHash.uuid_col.toString() == '6f8483b0-65e0-11e0-0000-fe8ebeead9fe');
             }
-            test.finish();
-          });
-        }
-      });
-    }
-  });
-};
-
-exports.testBlob = function(test, assert) {
-  connect(function(err, con) {
-    if (err) {
-      assert.ok(false);
-      test.finish();
-    } else {
-      assert.ok(true);
-
-      var col = new Buffer('columnName');
-      var val = new Buffer('value');
-      var key = new Buffer('rowKey');
-      var updParms = [
-        col,
-        val,
-        key
-      ];
-      con.execute('UPDATE CfBytes SET ?=? WHERE KEY=?', updParms, function(updErr) {
-        if (updErr) {
-          con.close();
-          assert.ok(false);
-          test.finish();
-        } else {
-          con.execute('SELECT ? FROM CfBytes WHERE KEY=?', [col, key], function(selErr, rows) {
-            con.close();
-            assert.strictEqual(rows.rowCount(), 1);
-            var row = rows[0];
-            assert.strictEqual(1, row.colCount());
-            // Buffers cannot be compared in their native form, so we have to serialize them:
-            assert.strictEqual(col.toString('hex'), row.cols[0].name.toString('hex'));
-            assert.strictEqual(val.toString('hex'), row.cols[0].value.toString('hex'));
             test.finish();
           });
         }
