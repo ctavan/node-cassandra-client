@@ -45,43 +45,63 @@ exports.testBigIntegerBrokenness = function(test, assert) {
   assert.ok(!zero1.equals(zero2));
 
   // instead, we need to rely on bytesToBigLong to return the right thing.
-  assert.ok(zero2.equals(bytesToBigLong(makeBuffer('\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000'))));
+  var str = '\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000';
+  assert.ok(zero2.equals(bytesToBigLong(makeBuffer(str))));
 
   test.finish();
 };
 
-exports.testNumConversion = function(test, assert) {
-  assert.strictEqual('0', bytesToNum(makeBuffer('\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000')).toString()); // 1
-  assert.strictEqual('1', bytesToNum(makeBuffer('\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0001')).toString()); // 1
-  assert.strictEqual('2', bytesToNum(makeBuffer('\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0002')).toString()); // 2
-  assert.strictEqual('255' ,bytesToNum(makeBuffer('\u0000\u0000\u0000\u0000\u0000\u0000\u0000ÿ')).toString()); // 255
-  assert.strictEqual('2550' ,bytesToNum(makeBuffer('\u0000\u0000\u0000\u0000\u0000\u0000\tö')).toString()); // 2550
-  assert.strictEqual('8025521', bytesToNum(makeBuffer('\u0000\u0000\u0000\u0000\u0000zu±')).toString()); // 8025521
-  assert.strictEqual('218025521', bytesToNum(makeBuffer('\u0000\u0000\u0000\u0000\fþÎ1')).toString()); // 218025521
+exports['Buffer to Number conversion'] = function(test, assert) {
 
-  // these values ensure that none-8-byte sequences work as well.
-  assert.strictEqual(2147483647, bytesToNum(makeBuffer('\u007f\u00ff\u00ff\u00ff'))); // [127,-1,-1,-1]
-  assert.strictEqual(-2147483648, bytesToNum(makeBuffer('\u0080\u0000\u0000\u0000'))); // [-128,0,0,0]
-  assert.strictEqual(-1, bytesToNum(makeBuffer('\u00ff'))); // [-1]
-  assert.strictEqual(1, bytesToNum(makeBuffer('\u0001'))); // [1]
+  var testInput = [
+    ['0', '\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000'],
+    ['1', '\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0001'],
+    ['2', '\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0002'],
+    ['255', '\u0000\u0000\u0000\u0000\u0000\u0000\u0000ÿ'],
+    ['2550', '\u0000\u0000\u0000\u0000\u0000\u0000\tö'],
+    ['8025521', '\u0000\u0000\u0000\u0000\u0000zu±'],
+    ['218025521', '\u0000\u0000\u0000\u0000\fþÎ1'],
+    // The following values ensure that non-8-byte sequences work as well.
+    ['2147483647', '\u007f\u00ff\u00ff\u00ff'], // [127,-1,-1,-1]
+    ['-2147483648', '\u0080\u0000\u0000\u0000'], // [-128,0,0,0]
+    ['-1', '\u00ff'], // [-1]
+    ['1', '\u0001'], // [1]
+    ['-1', 'ÿÿÿÿÿÿÿÿ']
+  ];
 
-  assert.strictEqual('-1', bytesToNum(makeBuffer('ÿÿÿÿÿÿÿÿ')).toString());
+  testInput.forEach(function(input) {
+    assert.strictEqual(input[0], bytesToNum(makeBuffer(input[1])).toString());
+  });
+
   test.finish();
 };
 
-exports.testLongConversion = function(test, assert) {
-  // we have to compare against strings.
-  assert.ok(new BigInteger('0').equals(bytesToBigLong(makeBuffer('\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000'))));
-  assert.strictEqual('0', bytesToBigLong(makeBuffer('\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000')).toString()); // 0
-  assert.strictEqual('1', bytesToBigLong(makeBuffer('\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0001')).toString()); // 1
-  assert.strictEqual('2', bytesToBigLong(makeBuffer('\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0002')).toString()); // 2
-  assert.strictEqual('255' ,bytesToBigLong(makeBuffer('\u0000\u0000\u0000\u0000\u0000\u0000\u0000ÿ')).toString()); // 255
-  assert.strictEqual('2550' ,bytesToBigLong(makeBuffer('\u0000\u0000\u0000\u0000\u0000\u0000\tö')).toString()); // 2550
-  assert.strictEqual('8025521', bytesToBigLong(makeBuffer('\u0000\u0000\u0000\u0000\u0000zu±')).toString()); // 8025521
-  assert.strictEqual('218025521', bytesToBigLong(makeBuffer('\u0000\u0000\u0000\u0000\fþÎ1')).toString()); // 218025521
-  assert.strictEqual('6544218025521', bytesToBigLong(makeBuffer('\u0000\u0000\u0005ó±Ên1')).toString()); // 6544218025521
-  assert.strictEqual('8776496549718025521', bytesToBigLong(makeBuffer('yÌa\u001c²be1')).toString()); // 8776496549718025521
-  assert.strictEqual('-1', bytesToBigLong(makeBuffer('ÿÿÿÿÿÿÿÿ')).toString()); // -1
+exports['BigInteger smoke test'] = function(test, assert) {
+  var zero = '\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000';
+  var zeroBigInteger = bytesToBigLong(makeBuffer(zero));
+  assert.ok(new BigInteger('0').equals(zeroBigInteger));
+  assert.ok(new BigInteger([0]).equals(zeroBigInteger));
+};
+
+exports['Buffer to BigInteger conversion']= function(test, assert) {
+
+  var testInput = [
+    ['0', '\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000'],
+    ['1', '\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0001'],
+    ['2', '\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0002'],
+    ['255', '\u0000\u0000\u0000\u0000\u0000\u0000\u0000ÿ'],
+    ['2550', '\u0000\u0000\u0000\u0000\u0000\u0000\tö'],
+    ['8025521', '\u0000\u0000\u0000\u0000\u0000zu±'],
+    ['218025521', '\u0000\u0000\u0000\u0000\fþÎ1'],
+    ['6544218025521', '\u0000\u0000\u0005ó±Ên1'],
+    ['8776496549718025521', 'yÌa\u001c²be1'],
+    ['-1', 'ÿÿÿÿÿÿÿÿ'],
+  ];
+
+  testInput.forEach(function(input) {
+    var result = bytesToBigLong(makeBuffer(input[1])).toString();
+    assert.strictEqual(input[0], result);
+  });
 
   test.finish();
 };
@@ -104,34 +124,34 @@ exports.testBigIntEdges = function(test, assert) {
 exports.testBigInt = function(test, assert) {
   // these arrays were generated using java program below.
   var expectedArrays = [
-    [ 23 ],
-    [ 0, -127 ],
-    [ 1, 3 ],
-    [ 4, 5 ],
-    [ 32, 0, 0, 0, 0 ],
-    [ 64, 0, 0, 0, 0 ],
-    [ 0, -128, 0, 0, 0, 0 ],
-    [ 76, 75, 89, -94, 112, -83, 123, -128 ],
-    [ 32, 23, -123, 66, -123, 31, -109, -128 ],
-    [ 122, -80, -3, 114, -84, 96, 0 ],
-    [ 8, 0, 0, 0, 0, 0, 0, 0, 0 ],
-    [ 12, 53, 8, 15, -119, 11, -105, 14, -72, 55, -128 ],
-    [ 16, 0, 0, 0, 0, 0, 0, 0, 0 ],
-    [ 0, -14, -67, -117, 113, -67, 39, -92, 104, -1, -84, 60 ],
-    [ -23 ],
-    [ -1, 127 ],
-    [ -2, -3 ],
-    [ -5, -5 ],
-    [ -32, 0, 0, 0, 0 ],
-    [ -64, 0, 0, 0, 0 ],
-    [ -128, 0, 0, 0, 0 ],
-    [ -77, -76, -90, 93, -113, 82, -124, -128 ],
-    [ -33, -24, 122, -67, 122, -32, 108, -128 ],
-    [ -123, 79, 2, -115, 83, -96, 0 ],
-    [ -8, 0, 0, 0, 0, 0, 0, 0, 0 ],
-    [ -13, -54, -9, -16, 118, -12, 104, -15, 71, -56, -128 ],
-    [ -16, 0, 0, 0, 0, 0, 0, 0, 0 ],
-    [ -1, 13, 66, 116, -114, 66, -40, 91, -105, 0, 83, -60 ]
+    [23],
+    [0, -127],
+    [1, 3],
+    [4, 5],
+    [32, 0, 0, 0, 0],
+    [64, 0, 0, 0, 0],
+    [0, -128, 0, 0, 0, 0],
+    [76, 75, 89, -94, 112, -83, 123, -128],
+    [32, 23, -123, 66, -123, 31, -109, -128],
+    [122, -80, -3, 114, -84, 96, 0],
+    [8, 0, 0, 0, 0, 0, 0, 0, 0],
+    [12, 53, 8, 15, -119, 11, -105, 14, -72, 55, -128],
+    [16, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, -14, -67, -117, 113, -67, 39, -92, 104, -1, -84, 60],
+    [-23],
+    [-1, 127],
+    [-2, -3],
+    [-5, -5],
+    [-32, 0, 0, 0, 0],
+    [-64, 0, 0, 0, 0],
+    [-128, 0, 0, 0, 0],
+    [-77, -76, -90, 93, -113, 82, -124, -128],
+    [-33, -24, 122, -67, 122, -32, 108, -128],
+    [-123, 79, 2, -115, 83, -96, 0],
+    [-8, 0, 0, 0, 0, 0, 0, 0, 0],
+    [-13, -54, -9, -16, 118, -12, 104, -15, 71, -56, -128],
+    [-16, 0, 0, 0, 0, 0, 0, 0, 0],
+    [-1, 13, 66, 116, -114, 66, -40, 91, -105, 0, 83, -60]
   ];
   var nums = [
     '23',
