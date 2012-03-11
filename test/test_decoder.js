@@ -15,12 +15,13 @@
  *
  */
 
-
 var BigInteger = require('../lib/bigint').BigInteger;
-var bytesToBigLong = require('../lib/decoder').bytesToBigLong;
-var bytesToNum = require('../lib/decoder').bytesToNum;
-var bufferToString = require('../lib/decoder').bufferToString;
+var Decoder = require('../lib/decoder');
 var UUID = require('../lib/uuid');
+
+var bytesToBigLong = Decoder.bytesToBigLong;
+var bytesToNum = Decoder.bytesToNum;
+var bufferToString = Decoder.bufferToString;
 
 function makeBuffer(string) {
   return new Buffer(string, 'binary');
@@ -28,23 +29,24 @@ function makeBuffer(string) {
 
 // friggen big integer library is broken.
 exports.testBigIntegerBrokenness = function(test, assert) {
-  // the the v8 lib behaved like the java BigInteger, this test would pass.
-  
+  // If the v8 lib behaved like the java BigInteger, this test would pass.
+
   // this is how the zeroes we read out of the database get constructed.
   var zero1 = new BigInteger([0]);
   assert.ok(zero1);
-  
+
   // this is how zeroes will be constructed by programmers.
   var zero2 = new BigInteger('0');
   assert.ok(zero2);
-  
-  // notice: they are not equal, but if the v8 lib _really_ behaved like java.math.BigInteger (which it claims to emulate)
-  // equality should be achived.
+
+  // notice: they are not equal, but if the v8 lib _really_ behaved like
+  // java.math.BigInteger (which it claims to emulate) equality should be
+  // achieved.
   assert.ok(!zero1.equals(zero2));
-  
+
   // instead, we need to rely on bytesToBigLong to return the right thing.
   assert.ok(zero2.equals(bytesToBigLong(makeBuffer('\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000'))));
-  
+
   test.finish();
 };
 
@@ -56,22 +58,21 @@ exports.testNumConversion = function(test, assert) {
   assert.strictEqual('2550' ,bytesToNum(makeBuffer('\u0000\u0000\u0000\u0000\u0000\u0000\tö')).toString()); // 2550
   assert.strictEqual('8025521', bytesToNum(makeBuffer('\u0000\u0000\u0000\u0000\u0000zu±')).toString()); // 8025521
   assert.strictEqual('218025521', bytesToNum(makeBuffer('\u0000\u0000\u0000\u0000\fþÎ1')).toString()); // 218025521
-  
-  // these values ensure that none 8 byte sequences work as well.
+
+  // these values ensure that none-8-byte sequences work as well.
   assert.strictEqual(2147483647, bytesToNum(makeBuffer('\u007f\u00ff\u00ff\u00ff'))); // [127,-1,-1,-1]
   assert.strictEqual(-2147483648, bytesToNum(makeBuffer('\u0080\u0000\u0000\u0000'))); // [-128,0,0,0]
   assert.strictEqual(-1, bytesToNum(makeBuffer('\u00ff'))); // [-1]
   assert.strictEqual(1, bytesToNum(makeBuffer('\u0001'))); // [1]
-  
+
   assert.strictEqual('-1', bytesToNum(makeBuffer('ÿÿÿÿÿÿÿÿ')).toString());
   test.finish();
 };
 
 exports.testLongConversion = function(test, assert) {
-  assert.ok(bytesToBigLong);
   // we have to compare against strings.
   assert.ok(new BigInteger('0').equals(bytesToBigLong(makeBuffer('\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000'))));
-  assert.strictEqual('0', bytesToBigLong(makeBuffer('\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000')).toString()); // 1
+  assert.strictEqual('0', bytesToBigLong(makeBuffer('\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000')).toString()); // 0
   assert.strictEqual('1', bytesToBigLong(makeBuffer('\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0001')).toString()); // 1
   assert.strictEqual('2', bytesToBigLong(makeBuffer('\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0002')).toString()); // 2
   assert.strictEqual('255' ,bytesToBigLong(makeBuffer('\u0000\u0000\u0000\u0000\u0000\u0000\u0000ÿ')).toString()); // 255
@@ -81,24 +82,25 @@ exports.testLongConversion = function(test, assert) {
   assert.strictEqual('6544218025521', bytesToBigLong(makeBuffer('\u0000\u0000\u0005ó±Ên1')).toString()); // 6544218025521
   assert.strictEqual('8776496549718025521', bytesToBigLong(makeBuffer('yÌa\u001c²be1')).toString()); // 8776496549718025521
   assert.strictEqual('-1', bytesToBigLong(makeBuffer('ÿÿÿÿÿÿÿÿ')).toString()); // -1
-  
+
   test.finish();
 };
 
-/** make sure sign extension and unsigned/signed conversions don't bite us. */
+// make sure sign extension and unsigned/signed conversions don't bite us.
 exports.testBigIntEdges = function(test, assert) {
-  
   assert.ok(new BigInteger([255]).equals(new BigInteger([-1])));
   assert.ok(new BigInteger([245]).equals(new BigInteger([-11])));
-  assert.deepEqual(new BigInteger([255]).toByteArray(), new BigInteger([-1]).toByteArray());
-  assert.deepEqual(new BigInteger([245]).toByteArray(), new BigInteger([-11]).toByteArray());
+  assert.deepEqual(new BigInteger([255]).toByteArray(),
+                   new BigInteger([-1]).toByteArray());
+  assert.deepEqual(new BigInteger([245]).toByteArray(),
+                   new BigInteger([-11]).toByteArray());
   assert.deepEqual(new BigInteger([255]), new BigInteger([-1]));
   assert.deepEqual(new BigInteger([245]), new BigInteger([-11]));
-  
+
   test.finish();
 };
 
-/** verify byte array fidelity with java.math.BigInteger */
+// verify byte array fidelity with java.math.BigInteger
 exports.testBigInt = function(test, assert) {
   // these arrays were generated using java program below.
   var expectedArrays = [
@@ -132,10 +134,10 @@ exports.testBigInt = function(test, assert) {
     [ -1, 13, 66, 116, -114, 66, -40, 91, -105, 0, 83, -60 ]
   ];
   var nums = [
-    '23',        
-    '129',       
-    '259',       
-    '1029',      
+    '23',
+    '129',
+    '259',
+    '1029',
     '137438953472',
     '274877906944',
     '549755813888',
@@ -146,11 +148,11 @@ exports.testBigInt = function(test, assert) {
     '14757543952358956762412928',
     '295147905179352825856',
     '293455147905179352825834556',
-                                  
-    '-23',       
-    '-129',      
-    '-259',      
-    '-1029',     
+
+    '-23',
+    '-129',
+    '-259',
+    '-1029',
     '-137438953472',
     '-274877906944',
     '-549755813888',
@@ -165,21 +167,22 @@ exports.testBigInt = function(test, assert) {
   assert.equal(expectedArrays.length, nums.length);
   for (var i = 0; i < nums.length; i++) {
     assert.deepEqual(new BigInteger(nums[i]).toByteArray(), expectedArrays[i]);
-    assert.deepEqual(new BigInteger(nums[i]).toByteArray(), new BigInteger(expectedArrays[i]).toByteArray());
+    assert.deepEqual(new BigInteger(nums[i]).toByteArray(),
+                     new BigInteger(expectedArrays[i]).toByteArray());
   }
-  
+
   test.finish();
 /**
 The expected values were all generated from this program:
- 
+
 import java.math.BigInteger;
- 
+
 public class TestBigInt {
   private static final String[] ints = {
-    "23",        
-    "129",       
-    "259",       
-    "1029",      
+    "23",
+    "129",
+    "259",
+    "1029",
     "137438953472",
     "274877906944",
     "549755813888",
@@ -190,11 +193,11 @@ public class TestBigInt {
     "14757543952358956762412928",
     "295147905179352825856",
     "293455147905179352825834556",
-                                  
-    "-23",       
-    "-129",      
-    "-259",      
-    "-1029",     
+
+    "-23",
+    "-129",
+    "-259",
+    "-1029",
     "-137438953472",
     "-274877906944",
     "-549755813888",
@@ -206,12 +209,12 @@ public class TestBigInt {
     "-295147905179352825856",
     "-293455147905179352825834556"
   };
-  
+
   public static void main(String args[]) {
     for (String s : ints)
       System.out.println(toString(new BigInteger(s).toByteArray()));
   }
-  
+
   private static String toString(byte[] arr) {
     StringBuilder sb = new StringBuilder("[ ");
     for (byte b : arr) {
@@ -224,22 +227,24 @@ public class TestBigInt {
 };
 
 exports.testUUID = function(test, assert) {
-
   /* from java:
-  ddf09190-6612-11e0-0000-fe8ebeead9f8->[221,240,145,144,102,18,17,224,0,0,254,142,190,234,217,248,] 
-  ddf0b8a0-6612-11e0-0000-1e4e5d5425fc->[221,240,184,160,102,18,17,224,0,0,30,78,93,84,37,252,]      
-  ddf0b8a1-6612-11e0-0000-90f061abd1ff->[221,240,184,161,102,18,17,224,0,0,144,240,97,171,209,255,]  
+  ddf09190-6612-11e0-0000-fe8ebeead9f8
+    ->[221,240,145,144,102,18,17,224,0,0,254,142,190,234,217,248,]
+  ddf0b8a0-6612-11e0-0000-1e4e5d5425fc
+    ->[221,240,184,160,102,18,17,224,0,0,30,78,93,84,37,252,]
+  ddf0b8a1-6612-11e0-0000-90f061abd1ff
+    ->[221,240,184,161,102,18,17,224,0,0,144,240,97,171,209,255,]
    */
   var strings = ['ddf09190-6612-11e0-0000-fe8ebeead9f8',
                  'ddf0b8a0-6612-11e0-0000-1e4e5d5425fc',
                  'ddf0b8a1-6612-11e0-0000-90f061abd1ff'];
-  var arrays = [[221,240,145,144,102,18,17,224,0,0,254,142,190,234,217,248], 
+  var arrays = [[221,240,145,144,102,18,17,224,0,0,254,142,190,234,217,248],
                 [221,240,184,160,102,18,17,224,0,0,30,78,93,84,37,252],
                 [221,240,184,161,102,18,17,224,0,0,144,240,97,171,209,255]];
 
   assert.strictEqual(strings.length, arrays.length);
   for (var i = 0; i < strings.length; i++) {
-    assert.deepEqual( UUID.fromString(strings[i]), UUID.fromBytes(arrays[i]) );
+    assert.deepEqual(UUID.fromString(strings[i]), UUID.fromBytes(arrays[i]));
   }
   test.finish();
 };
