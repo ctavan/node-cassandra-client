@@ -185,11 +185,12 @@ exports.testBigInt = function(test, assert) {
     '-293455147905179352825834556'
   ];
   assert.equal(expectedArrays.length, nums.length);
-  for (var i = 0; i < nums.length; i++) {
-    assert.deepEqual(new BigInteger(nums[i]).toByteArray(), expectedArrays[i]);
-    assert.deepEqual(new BigInteger(nums[i]).toByteArray(),
+
+  nums.forEach(function(num, i) {
+    assert.deepEqual(new BigInteger(num).toByteArray(), expectedArrays[i]);
+    assert.deepEqual(new BigInteger(num).toByteArray(),
                      new BigInteger(expectedArrays[i]).toByteArray());
-  }
+  });
 
   test.finish();
 /**
