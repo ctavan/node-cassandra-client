@@ -15,7 +15,7 @@
     "type": "git",
     "url": "https://code.google.com/a/apache-extras.org/p/cassandra-node/"
   },
-  "main": "node-cassandra-client",
+  "main": "./lib/driver",
   "directories": {
     "lib": "lib"
   },
